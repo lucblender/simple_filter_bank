@@ -75,6 +75,9 @@ float resonances[12] = { 0, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85
 float drives[12] = { 0, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0 };
 float filterFrequencies[12] = { 100, 158, 249, 392, 618, 975, 1538, 2425, 3825, 6032, 9512, 15000 };
 
+float channel0LastSample = 0.0f;
+float channel1LastSample = 0.0f;
+
 
 void ProcessAudio(float** in, float** out, size_t size) {
 
@@ -84,8 +87,8 @@ void ProcessAudio(float** in, float** out, size_t size) {
     float in_1;
 
     if (switchMode == 0) {
-      in_0 = in[0][i];
-      in_1 = in[1][i];
+      in_0 = in[0][i]+channel0LastSample*0.1f;
+      in_1 = in[1][i]+channel1LastSample*0.1f;
     } else if (switchMode == 1) {
       in_0 = in[0][i];
       in_1 = in[0][i];
@@ -93,6 +96,7 @@ void ProcessAudio(float** in, float** out, size_t size) {
       in_0 = in[0][i] + in[1][i];
       in_1 = in_0;
     }
+    
 
     float out_0 = 0.0f;
     float out_1 = 0.0f;
@@ -127,6 +131,8 @@ void ProcessAudio(float** in, float** out, size_t size) {
         out_1 += secondFilters[i]->Band() * filterFactors[i] * additionalFactor_1;
       }
     }
+    channel0LastSample = out_0;
+    channel1LastSample = out_1;
     out[0][i] = out_0;
     out[1][i] = out_1;
   }
