@@ -2,6 +2,10 @@
 
 using namespace daisysp;
 
+#define FEEDBACK_FACTOR_NONE 0.0f
+#define FEEDBACK_FACTOR_LOW 0.10f
+#define FEEDBACK_FACTOR_HIGH 0.15f
+
 #define FILTER_00 A11
 #define FILTER_01 A10
 #define FILTER_03 A8
@@ -36,6 +40,12 @@ uint32_t switchSliderPins[12] = { SW_FILTER_00, SW_FILTER_01, SW_FILTER_02, SW_F
 #define SW_MODE_0 12
 #define SW_MODE_1 13
 
+#define SW_FDBK0_0 29
+#define SW_FDBK0_1 30
+
+#define SW_FDBK1_0 26
+#define SW_FDBK1_1 27
+
 //#define DEBUG_ANALOG_PIN
 //#define DEBUG_DIGITAL_PIN
 
@@ -45,6 +55,9 @@ float filterFactors[12];
 uint8_t filterSwitchStatus[12];
 
 uint8_t switchMode = 0;
+
+uint8_t switchfdbk0 = 0;
+uint8_t switchfdbk1 = 0;
 
 /* 
 ---------------------------------------------------------
@@ -73,7 +86,8 @@ Svf* secondFilters[12];
 
 float resonances[12] = { 0, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 0 };
 float drives[12] = { 0, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0 };
-float filterFrequencies[12] = { 100, 158, 249, 392, 618, 975, 1538, 2425, 3825, 6032, 9512, 15000 };
+//float filterFrequencies[12] = { 100, 158, 249, 392, 618, 975, 1538, 2425, 3825, 6032, 9512, 15000 };
+float filterFrequencies[12] = { 98,147,220,330,494,740,1109,1661,2489,3729,5588,8372};
 
 float channel0LastSample = 0.0f;
 float channel1LastSample = 0.0f;
@@ -86,26 +100,47 @@ void ProcessAudio(float** in, float** out, size_t size) {
     float in_0;
     float in_1;
 
-    if (switchMode == 0) {
-      in_0 = in[0][i]+channel0LastSample*0.1f;
-      in_1 = in[1][i]+channel1LastSample*0.1f;
-    } else if (switchMode == 1) {
-      in_0 = in[0][i];
-      in_1 = in[0][i];
-    } else if (switchMode == 2) {
-      in_0 = in[0][i] + in[1][i];
-      in_1 = in_0;
+    float fdbk_factor_0 = FEEDBACK_FACTOR_NONE;
+    float fdbk_factor_1 = FEEDBACK_FACTOR_NONE;
+
+    if (switchfdbk0 == 0) {
+      fdbk_factor_0 = FEEDBACK_FACTOR_NONE;
+    } else if (switchfdbk0 == 1) {
+      fdbk_factor_0 = FEEDBACK_FACTOR_LOW;
+    } else if (switchfdbk0 == 2) {
+      fdbk_factor_0 = FEEDBACK_FACTOR_HIGH;
     }
-    
+
+    if (switchfdbk1 == 0) {
+      fdbk_factor_1 = FEEDBACK_FACTOR_NONE;
+    } else if (switchfdbk1 == 1) {
+      fdbk_factor_1 = FEEDBACK_FACTOR_LOW;
+    } else if (switchfdbk1 == 2) {
+      fdbk_factor_1 = FEEDBACK_FACTOR_HIGH;
+    }
+
+    if (switchMode == 0) {
+      in_0 = in[0][i] + channel0LastSample * fdbk_factor_0;
+      in_1 = in[1][i] + channel1LastSample * fdbk_factor_1;
+    } else if (switchMode == 1) {
+      in_0 = in[0][i] + channel0LastSample * fdbk_factor_0;
+      in_1 = in[0][i] + channel1LastSample * fdbk_factor_1;
+    } else if (switchMode == 2) {
+      in_0 = in[0][i] + in[1][i] + channel0LastSample * fdbk_factor_0;
+      in_1 = in[0][i] + in[1][i] + channel1LastSample * fdbk_factor_1;
+    }
+
 
     float out_0 = 0.0f;
     float out_1 = 0.0f;
     float additionalFactor_0 = 1.0f;
     float additionalFactor_1 = 1.0f;
 
+
     for (int i = 0; i < 12; i++) {
       filters[i]->Process(in_0);
       secondFilters[i]->Process(in_1);
+
       if (switchMode == 0) {
         additionalFactor_0 = filterSwitchStatus[i];
         additionalFactor_1 = filterSwitchStatus[i];
@@ -152,6 +187,12 @@ void setup() {
 
   pinMode(SW_MODE_0, INPUT_PULLUP);
   pinMode(SW_MODE_1, INPUT_PULLUP);
+
+  pinMode(SW_FDBK0_0, INPUT_PULLUP);
+  pinMode(SW_FDBK0_1, INPUT_PULLUP);
+
+  pinMode(SW_FDBK1_0, INPUT_PULLUP);
+  pinMode(SW_FDBK1_1, INPUT_PULLUP);
 
   for (int i = 0; i < 12; i++) {
     filters[i] = new Svf();
@@ -200,12 +241,34 @@ void readDigitals() {
 
   uint8_t swMode0 = digitalRead(SW_MODE_0);
   uint8_t swMode1 = digitalRead(SW_MODE_1);
+
   if (swMode0 == 1 && swMode1 == 1)
     switchMode = 1;
   else if (swMode0 == 0 && swMode1 == 1)
-    switchMode = 2;
-  else if (swMode0 == 1 && swMode1 == 0)
     switchMode = 0;
+  else if (swMode0 == 1 && swMode1 == 0)
+    switchMode = 2;
+
+  uint8_t swfdbk0_0 = digitalRead(SW_FDBK0_0);
+  uint8_t swfdbk0_1 = digitalRead(SW_FDBK0_1);
+
+  uint8_t swfdbk1_0 = digitalRead(SW_FDBK1_0);
+  uint8_t swfdbk1_1 = digitalRead(SW_FDBK1_1);
+
+  if (swfdbk0_0 == 1 && swfdbk0_1 == 1)
+    switchfdbk0 = 1;
+  else if (swfdbk0_0 == 0 && swfdbk0_1 == 1)
+    switchfdbk0 = 0;
+  else if (swfdbk0_0 == 1 && swfdbk0_1 == 0)
+    switchfdbk0 = 2;
+
+  if (swfdbk1_0 == 1 && swfdbk1_1 == 1)
+    switchfdbk1 = 1;
+  else if (swfdbk1_0 == 0 && swfdbk1_1 == 1)
+    switchfdbk1 = 0;
+  else if (swfdbk1_0 == 1 && swfdbk1_1 == 0)
+    switchfdbk1 = 2;
+
 
 #ifdef DEBUG_DIGITAL_PIN
 
@@ -215,6 +278,10 @@ void readDigitals() {
   }
   Serial.print("mode: ");
   Serial.print(switchMode);
+  Serial.print(",feedback channel0: ");
+  Serial.print(switchfdbk0);
+  Serial.print(",feedback channel1: ");
+  Serial.print(switchfdbk1);
   Serial.println();
 #endif
 }
