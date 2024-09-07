@@ -91,3 +91,5 @@ out/
 *.step
 
 *.lck
+
+*.dxf
