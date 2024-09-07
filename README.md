@@ -1,7 +1,9 @@
 
 # simple_filter_bank
 
-The simple_filter_bank or lx-bank-001 is a digital filter bank (with unique feedback resonance implementation) based on the [daisy seed](https://electro-smith.com/products/daisy-seed) by electrosmith and the [Simple Designer](https://www.synthux.academy/#Designer) by Synthux Academy. Alternatively, the software can be run on the [Simple Touch](https://www.synthux.academy/#Touch) also by Synthux Academy.
+The simple_filter_bank or lx-bank-001 is a digital filter bank (with unique feedback resonance implementation) based on the [daisy seed](https://electro-smith.com/products/daisy-seed) by electrosmith and the [Simple Designer](https://www.synthux.academy/#Designer) by Synthux Academy.
+
+Alternatively, the software can be run on the [Simple Touch](https://www.synthux.academy/#Touch) also by Synthux Academy.
 
 - [simple\_filter\_bank](#simple_filter_bank)
   - [About](#about)
@@ -18,7 +20,9 @@ The simple_filter_bank or lx-bank-001 is a digital filter bank (with unique feed
 ## About
 
 Making a digital filter bank adds the possibility to tune the filter perfectly. Thanks to this ability, the lx-bank-001 is tuned following the circle of fifth with 12 banks tuned accordingly to G3, D3, A3, E4, B4, F#5, C#6, G#6, D#7, A#7, F8, C9.
+
 This make the 12 banks cover a large spectrum up to 8.4kHz. The whole filter bank is made resonant with a feedback loop inspired by the Make Noise Music QPAS filter. The feedback can either be disabled, set to low or high.
+
 When the filter bank feedback is set to high, the filter bank become a unique drone like instrument where two adjacent faders are distant of a fifth and therefore will sound beautiful to your ears.
 
 ## Software
@@ -53,8 +57,11 @@ Additionally, the two faders of the simple touch controls:
 
 The Simple Designer version has a custom 32HP eurorack compatible PCB front panel. The Simple Designer PCB is 42HP so take your best saw or dremel and cut the excess 10HP.
 Under the [Hardware/panel-pcb](/Hardware/panel-pcb/) folder, you will find the KiCad project that will allow you to print the PCB.
+
 ![front-pannel-kicad-render](/Pictures/front-pannel.png)
-In my case, I recommend using [PCBWay](pcbway.com/)services. I chose to go with a white solder mask, black silkscreen and HASL surface finish.
+
+In my case, I recommend using [PCBWay](pcbway.com/) services. I chose to go with a white solder mask, black silkscreen and HASL surface finish.
+
 **CAUTION, the daisy is soldered on the bottom to have enough room. The pinning is then the opposite of standard mounting of the daisy on Simple Designer.**
 Follow the following table if you want to create a version of the lx-bank-001 compatible with the front panel and firmware.
 
@@ -113,7 +120,9 @@ You'll need to assemble:
 ## License
 
 MIT License
+
 Copyright (c) 2024 Lucas Bonvin
+
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
