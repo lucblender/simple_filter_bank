@@ -60,7 +60,7 @@ uint32_t switchSliderPins[12] = { SW_FILTER_00, SW_FILTER_01, SW_FILTER_02, SW_F
 
 //#define DEBUG_ANALOG_PIN
 //#define DEBUG_DIGITAL_PIN
-#define DEBUG_MPR121
+//#define DEBUG_MPR121
 
 float sample_rate;
 
@@ -308,8 +308,8 @@ void loop() {
   delay(10);
 }
 
+#ifdef SIMPLE_TOUCH
 void getInitialValues() {
-
   for (int i = 0; i < 12; i++) {
     for (int iter = 0; iter < 16 + 4; iter++) {
       if (iter > 3)
@@ -320,6 +320,7 @@ void getInitialValues() {
     initialValues[i] = initialValues[i] / 16;
   }
 }
+#endif
 
 void readSliders() {
   leftSliderValue = simpleAnalogRead(SLIDER_RIGHT);
@@ -394,6 +395,7 @@ void readDigitals() {
 #endif
 }
 
+#ifdef SIMPLE_TOUCH
 void capacitiveTouchRead() {
   int32_t value;
   float fValue;
@@ -415,9 +417,10 @@ void capacitiveTouchRead() {
 #endif
   }
 #ifdef DEBUG_MPR121
-    Serial.println("");
+  Serial.println("");
 #endif
 }
+#endif
 
 float simpleAnalogReadBank(uint32_t pin) {
   return 0.7 * ((float)analogRead(pin) / 1023);
