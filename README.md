@@ -5,6 +5,9 @@ The simple_filter_bank or lx-bank-001 is a digital filter bank (with unique feed
 
 Alternatively, the software can be run on the [Simple Touch](https://www.synthux.academy/#Touch) also by Synthux Academy.
 
+![lx-bank](/Pictures/lx-bank.png)
+
+
 - [simple\_filter\_bank](#simple_filter_bank)
   - [About](#about)
   - [Software](#software)
