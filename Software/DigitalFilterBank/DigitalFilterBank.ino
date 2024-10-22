@@ -1,6 +1,6 @@
 // you're using simple touch to make ambiant filter-bank? leave this line uncommented
 // you're using simple kit for a true filter bank? comment this line
-#define SIMPLE_TOUCH
+//#define SIMPLE_TOUCH
 
 #include "DaisyDuino.h"
 
@@ -49,6 +49,32 @@ uint8_t filterSliderPins[12] = { FILTER_00, FILTER_01, FILTER_02, FILTER_03, FIL
 uint32_t switchSliderPins[12] = { SW_FILTER_00, SW_FILTER_01, SW_FILTER_02, SW_FILTER_03, SW_FILTER_04, SW_FILTER_05, SW_FILTER_06, SW_FILTER_07, SW_FILTER_08, SW_FILTER_09, SW_FILTER_10, SW_FILTER_11 };
 
 
+class EnvF {
+public:
+  EnvF(float a, float b)
+    : a_(a), b_(b), y_(0) {}
+
+  float process(float x) {
+    const auto abs_x = abs(x);
+    if (abs_x > y_) {
+      y_ = a_ * y_ + (1 - a_) * abs_x;
+    } else {
+      y_ = b_ * y_ + (1 - b_) * abs_x;
+    }
+    return y_;
+  }
+
+private:
+  double a_, b_, y_;
+};
+
+
+double a = 0.75f;
+double b = 0.999f;
+EnvF modulatorEF[12] = {  EnvF(a, b), EnvF(a, b), EnvF(a, b), EnvF(a, b), 
+                          EnvF(a, b), EnvF(a, b), EnvF(a, b), EnvF(a, b), 
+                          EnvF(a, b), EnvF(a, b), EnvF(a, b), EnvF(a, b) };
+
 #define SW_MODE_0 12
 #define SW_MODE_1 13
 
@@ -58,7 +84,7 @@ uint32_t switchSliderPins[12] = { SW_FILTER_00, SW_FILTER_01, SW_FILTER_02, SW_F
 #define SW_FDBK1_0 26
 #define SW_FDBK1_1 27
 
-//#define DEBUG_ANALOG_PIN
+#define DEBUG_ANALOG_PIN
 //#define DEBUG_DIGITAL_PIN
 //#define DEBUG_MPR121
 
@@ -178,47 +204,86 @@ void ProcessAudio(float** in, float** out, size_t size) {
     float additionalFactor_0 = 1.0f;
     float additionalFactor_1 = 1.0f;
 
+    int filterSwitchTotal = 0;
 
-    for (int i = 0; i < 12; i++) {
-      filters[i]->Process(in_0);
-      secondFilters[i]->Process(in_1);
+    bool vocoderModeEnabled = false;
 
-      if (switchMode == 0) {
-        additionalFactor_0 = filterSwitchStatus[i];
-        additionalFactor_1 = filterSwitchStatus[i];
-
-      } else if (switchMode == 1) {
-        additionalFactor_0 = 1.0f;
-        additionalFactor_1 = filterSwitchStatus[i];
-      } else if (switchMode == 2) {
-        additionalFactor_0 = 1.0f;
-        additionalFactor_1 = filterSwitchStatus[i];
+    // when using the simple kit, we can enter in vocoder mode 
+#ifndef SIMPLE_TOUCH
+    if (switchMode == 0) {
+      for (int i = 0; i < 12; i++) {
+        filterSwitchTotal += filterSwitchStatus[i];
       }
+      if (filterSwitchTotal == 0) {
+        vocoderModeEnabled = true;
+        for (int i = 0; i < 12; i++) {
+          filters[i]->Process(in_0);
+          secondFilters[i]->Process(in_1);
+          float modulator;
+          float signal;
 
-      if (i == 0) {
-#ifdef SIMPLE_TOUCH
-        out_0 += filters[i]->Low() * filterFactors[i] * additionalFactor_0;
-        out_1 += secondFilters[i]->Low() * filterFactors[i] * additionalFactor_1;
-#else
-        out_0 += filters[i]->Low() * touchValueFactors[i];
-        out_1 += secondFilters[i]->Low() * touchValueFactors[i];
+          if (i == 0) {
+            modulator = filters[i]->Low();
+            signal = secondFilters[i]->Low();
+          } else if (i == 11) {
+            modulator = filters[i]->High();
+            signal = secondFilters[i]->High();
+          } else {
+            modulator = filters[i]->Band();
+            signal = secondFilters[i]->Band();
+          }
+
+            float ef = modulatorEF[i].process(modulator);
+            out_0 += (signal * ef * filterFactors[i]);
+
+        }
+        out_1 = out_0;
+      }
+    }
 #endif
-      } else if (i == 11) {
+
+    if (vocoderModeEnabled == false) {
+      for (int i = 0; i < 12; i++) {
+        filters[i]->Process(in_0);
+        secondFilters[i]->Process(in_1);
+
+        if (switchMode == 0) {
+          additionalFactor_0 = filterSwitchStatus[i];
+          additionalFactor_1 = filterSwitchStatus[i];
+
+        } else if (switchMode == 1) {
+          additionalFactor_0 = 1.0f;
+          additionalFactor_1 = filterSwitchStatus[i];
+        } else if (switchMode == 2) {
+          additionalFactor_0 = 1.0f;
+          additionalFactor_1 = filterSwitchStatus[i];
+        }
+
+        if (i == 0) {
 #ifdef SIMPLE_TOUCH
-        out_0 += filters[i]->High() * touchValueFactors[i];
-        out_1 += secondFilters[i]->High() * touchValueFactors[i];
+          out_0 += filters[i]->Low() * filterFactors[i] * additionalFactor_0;
+          out_1 += secondFilters[i]->Low() * filterFactors[i] * additionalFactor_1;
 #else
-        out_0 += filters[i]->High() * filterFactors[i] * additionalFactor_0;
-        out_1 += secondFilters[i]->High() * filterFactors[i] * additionalFactor_1;
+          out_0 += filters[i]->Low() * touchValueFactors[i];
+          out_1 += secondFilters[i]->Low() * touchValueFactors[i];
 #endif
-      } else {
+        } else if (i == 11) {
 #ifdef SIMPLE_TOUCH
-        out_0 += filters[i]->Band() * touchValueFactors[i];
-        out_1 += secondFilters[i]->Band() * touchValueFactors[i];
+          out_0 += filters[i]->High() * touchValueFactors[i];
+          out_1 += secondFilters[i]->High() * touchValueFactors[i];
 #else
-        out_0 += filters[i]->Band() * filterFactors[i] * additionalFactor_0;
-        out_1 += secondFilters[i]->Band() * filterFactors[i] * additionalFactor_1;
+          out_0 += filters[i]->High() * filterFactors[i] * additionalFactor_0;
+          out_1 += secondFilters[i]->High() * filterFactors[i] * additionalFactor_1;
 #endif
+        } else {
+#ifdef SIMPLE_TOUCH
+          out_0 += filters[i]->Band() * touchValueFactors[i];
+          out_1 += secondFilters[i]->Band() * touchValueFactors[i];
+#else
+          out_0 += filters[i]->Band() * filterFactors[i] * additionalFactor_0;
+          out_1 += secondFilters[i]->Band() * filterFactors[i] * additionalFactor_1;
+#endif
+        }
       }
     }
     channel0LastSample = out_0;

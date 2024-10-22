@@ -1,7 +1,7 @@
 
 # simple_filter_bank
 
-The simple_filter_bank or lx-bank-001 is a digital filter bank (with unique feedback resonance implementation) based on the [daisy seed](https://electro-smith.com/products/daisy-seed) by electrosmith and the [Simple Designer](https://www.synthux.academy/#Designer) by Synthux Academy.
+The simple_filter_bank or lx-bank-001 is a digital filter bank (with unique feedback resonance implementation *and vocoder mode!*) based on the [daisy seed](https://electro-smith.com/products/daisy-seed) by electrosmith and the [Simple Designer](https://www.synthux.academy/#Designer) by Synthux Academy.
 
 Alternatively, the software can be run on the [Simple Touch](https://www.synthux.academy/#Touch) also by Synthux Academy.
 
@@ -51,6 +51,7 @@ Additionally, the two faders of the simple touch controls:
 ### Mode Description
 
 - 0 : input 0 goes to out 0, input 1 goes to out 1. Switch enable or disable filters on both output
+  - In mode 0, if all the filters are disabled, you will enter in vocoder mode. Input 0 for modulator(voice), Input 1 for carrier (oscillator).
 - 1 : input 0 goes to out 0 and 1 isn't used Switch enable or disable filters only on output 1, output 0 has all filters enabled
 - 2 : input 0 and 1 are mixed to out 0 and 1 Switch enable or disable filters only on output 1, output 0 has all filters enabled
 
